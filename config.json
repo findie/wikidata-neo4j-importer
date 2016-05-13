@@ -1,0 +1,10 @@
+{
+  "file": "./small-wiki.json",
+  "neo4j": {
+    "bolt": "bolt://localhost",
+    "auth": {
+      "user": "neo4j",
+      "pass": "password"
+    }
+  }
+}

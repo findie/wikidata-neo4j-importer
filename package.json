@@ -1,0 +1,16 @@
+{
+  "name": "wikidata-neo4j",
+  "version": "0.0.1",
+  "description": "Imports wikidata to neo4j",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stefan-Gabriel Muscalu <stefan.gabriel.muscalu@gmail.com> (http://my.corneroftheinternet.rocks/)",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.0.0-rc.4",
+    "n-readlines": "^0.2.2",
+    "neo4j-driver": "^1.0.1"
+  }
+}
