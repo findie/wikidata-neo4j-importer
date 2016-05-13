@@ -1,5 +1,7 @@
 'use strict';
 const helper = require('./helpers');
+const ETA = require('../helper').ETA;
+
 const config = require('../config.json');
 
 const makeItemBuffer = (lineReader) => {
@@ -38,7 +40,8 @@ const stage1 = function(neo4j, lineReader, callback) {
     let lines = 0;
 
     console.log('Starting node creation...');
-    var session = neo4j.session();
+    let session = neo4j.session();
+    const eta = new ETA(lineReader.total);
 
     function _done(e) {
         session.close();
@@ -49,13 +52,14 @@ const stage1 = function(neo4j, lineReader, callback) {
 
     function _doWork() {
         // if there is no buffer we wait
-        if(!buffer) {
+        if (!buffer) {
             return setImmediate(_doWork);
         }
         if (!buffer.length) return _done();
 
         console.log('Imported', lines, 'lines');
         console.log((((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!');
+        console.log('Remaining', eta.pretty(lines));
 
         lines += buffer.length;
 
@@ -92,6 +96,7 @@ const stage1 = function(neo4j, lineReader, callback) {
             buffer = makeItemBuffer(lineReader);
         });
     }
+
     _doWork();
 };
 
