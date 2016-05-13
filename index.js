@@ -10,7 +10,7 @@ const config = require('./config.json');
 const driver = neo4j.driver(config.neo4j.bolt, neo4j.auth.basic(config.neo4j.auth.user, config.neo4j.auth.pass));
 
 console.log('Counting lines');
-const lines = execSync(`wc -l ${path.resolve(config.file)}`).toString().trim().split(' ')[0];
+const lines = config.lines || execSync(`wc -l ${path.resolve(config.file)}`).toString().trim().split(' ')[0];
 console.log('Found'. lines, 'lines');
 
 const lineReaderSetup = (lineReader) => {
