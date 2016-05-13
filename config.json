@@ -6,5 +6,10 @@
       "user": "neo4j",
       "pass": "password"
     }
-  }
+  },
+  "do": {
+    "0": true,
+    "1": true
+  },
+  "bucket": 100
 }

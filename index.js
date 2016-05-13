@@ -13,10 +13,12 @@ const stage0 = require('./stage-0');
 const stage1 = require('./stage-1');
 
 async.series([
-    (cb) => stage0(driver, cb),
-    (cb) => stage1(driver, lineReader, cb)
+    (cb) => !config.do[0] ? cb() : stage0(driver, cb),
+    (cb) => !config.do[1] ? cb() : stage1(driver, lineReader, cb)
 ], (err) => {
     'use strict';
     console.log(err || 'done');
-})
+    console.log('exiting in 5 sec');
+    setTimeout(process.exit.bind(process, (err ? 1 : 0)), 5000)
+});
 

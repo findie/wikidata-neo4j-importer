@@ -1,14 +1,14 @@
 'use strict';
 const helper = require('./helpers');
+const config = require('../config.json');
 
 const makeItemBuffer = (lineReader) => {
 
     let line;
-    let lines = 10;
 
     const itemBuffer = [];
 
-    while (itemBuffer.length < lines && (line = lineReader.next())) {
+    while (itemBuffer.length < config.bucket && (line = lineReader.next())) {
         line = line
             .toString()
             .trim()
@@ -31,7 +31,7 @@ const makeItemBuffer = (lineReader) => {
  * here we add all the nodes in the DB (item and property)
  * @param {Driver} neo4j
  * @param {LineByLine} lineReader
- * @param {function()} callback
+ * @param {function(Error)} callback
  */
 const stage1 = function(neo4j, lineReader, callback) {
 
@@ -56,7 +56,7 @@ const stage1 = function(neo4j, lineReader, callback) {
                     UNWIND {buffer} AS item WITH item
                     WHERE item.type = {item}
                     WITH item
-                    CREATE (n:Item)
+                    MERGE (n:Item {id: item.id})
                         SET 
                             n = item
                     RETURN null
@@ -66,7 +66,7 @@ const stage1 = function(neo4j, lineReader, callback) {
                     UNWIND {buffer} AS item WITH item
                     WHERE item.type = {prop}
                     WITH item
-                    CREATE (n:Property)
+                    MERGE (n:Property {id: item.id})
                         SET 
                             n = item
                     RETURN null
