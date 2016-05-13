@@ -86,6 +86,7 @@ const stage1 = function(neo4j, lineReader, callback) {
         // because node is not truly async, we make buffer on set immediate in order for the
         // transaction to do it's magic
         setImmediate(() => {
+            console.log('making buffer');
             buffer = makeItemBuffer(lineReader);
         });
     }
