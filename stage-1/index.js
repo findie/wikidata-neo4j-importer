@@ -49,13 +49,8 @@ const stage1 = function(neo4j, lineReader, callback) {
         callback(e);
     };
 
-    let buffer = makeItemBuffer(lineReader);
-
     var _doWork = function() {
-        // if there is no buffer we wait
-        if (!buffer) {
-            return setImmediate(_doWork);
-        }
+        const buffer = makeItemBuffer(lineReader);
         if (!buffer.length) return _done();
 
         console.log('Imported', lines, 'lines');
@@ -84,17 +79,8 @@ const stage1 = function(neo4j, lineReader, callback) {
                     RETURN null
 
             `, { buffer, item: helper.type.item, prop: helper.type.prop })
-            .then(setTimeout(_doWork, 1000))
+            .then(_doWork)
             .catch(_done);
-        buffer = null;
-
-        // after we sand that buffer, we make another one while we wait
-        // because node is not truly async, we make buffer on set immediate in order for the
-        // transaction to do it's magic
-        setImmediate(() => {
-            console.log('making buffer');
-            buffer = makeItemBuffer(lineReader);
-        });
     };
 
     for(let i = 0; i < (config.concurrency || 4); i++){
