@@ -35,7 +35,7 @@ ETA.prototype.pretty = function(current) {
     text.push(ms % 24);
     ms = (ms / 24) | 0;
 
-    while (!text[text.length - 1])text.pop();
+    while (text.length && !text[text.length - 1])text.pop();
 
 
     var term = ['ms', 's', 'm', 'h', 'd'];
