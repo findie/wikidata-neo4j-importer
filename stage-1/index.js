@@ -43,14 +43,15 @@ const stage1 = function(neo4j, lineReader, callback) {
     let session = neo4j.session();
     const eta = new ETA(lineReader.total);
 
-    function _done(e) {
+    var _done = function (e) {
+        _done = _doWork = () => null;
         session.close();
         callback(e);
-    }
+    };
 
     let buffer = makeItemBuffer(lineReader);
 
-    function _doWork() {
+    var _doWork = function() {
         // if there is no buffer we wait
         if (!buffer) {
             return setImmediate(_doWork);
@@ -83,7 +84,7 @@ const stage1 = function(neo4j, lineReader, callback) {
                     RETURN null
 
             `, { buffer, item: helper.type.item, prop: helper.type.prop })
-            .then(_doWork)
+            .then(setTimeout(_doWork, 1000))
             .catch(_done);
         buffer = null;
 
@@ -96,7 +97,9 @@ const stage1 = function(neo4j, lineReader, callback) {
         });
     };
 
-    _doWork();
+    for(let i = 0; i < (config.concurrency || 4); i++){
+        setTimeout(_doWork, (Math.random() + i) * 500);
+    }
 };
 
 

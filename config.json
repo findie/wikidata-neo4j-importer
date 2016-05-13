@@ -11,6 +11,7 @@
     "0": true,
     "1": true
   },
+  "concurrency": 4,
   "skip": 0,
   "lines": 21225524,
   "bucket": 10

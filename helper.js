@@ -17,7 +17,7 @@ ETA.prototype.tick = function(current) {
     this.lastCurrent = current;
 
     const eta = diff * (remaining / change);
-    this.lastEtas.push(eta);
+    if (!isNaN(parseInt(eta))) this.lastEtas.push(eta);
     if (this.lastEtas.length > 10) this.lastEtas.shift();
 
     return this.lastEtas.reduce((a, c)=> a + c, 0) / this.lastEtas.length;
