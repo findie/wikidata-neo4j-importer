@@ -21,13 +21,13 @@ const lineReaderSetup = (lineReader) => {
     
     if (!config.skip) return lineReader;
     for (let i = 0; i < config.skip; i++) {
-        if(i % config.bucket == 0) console.log('Skipping', i, '(', i / config.skip * 100, ')');
+        if(i % config.bucket == 0) console.log('Skipping', i, '(', i / config.skip * 100, '%)');
         lineReader.next();
     }
     return lineReader;
 };
 
-const lineReader = lineReaderSetup(new LineByLine(path.resolve(config.file)));
+const lineReader = lineReaderSetup(new LineByLine(path.resolve(config.file), {readChunk: 1024 * 1024 * 4}));
 
 const stage0 = require('./stage-0');
 const stage1 = require('./stage-1');
