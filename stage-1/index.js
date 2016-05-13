@@ -58,8 +58,7 @@ const stage1 = function(neo4j, lineReader, callback) {
         if (!buffer.length) return _done();
 
         console.log('Imported', lines, 'lines');
-        console.log((((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!');
-        console.log('Remaining', eta.pretty(lines));
+        console.log((((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines));
 
         lines += buffer.length;
 

@@ -30,7 +30,7 @@ ETA.prototype.pretty = function(current) {
 
     var term = ['ms', 's', 'm', 'h', 'd'];
 
-    return text.map((x, index) => `${x}${term[index]}`).join(' ');
+    return text.map((x, index) => `${x}${term[index]}`).reverse().join(' ');
 };
 
 module.exports.ETA = ETA;
