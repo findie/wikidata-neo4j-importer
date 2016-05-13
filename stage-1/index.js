@@ -35,6 +35,8 @@ const makeItemBuffer = (lineReader) => {
  */
 const stage1 = function(neo4j, lineReader, callback) {
 
+    let lines = 0;
+
     console.log('Starting node creation...');
     var session = neo4j.session();
 
@@ -45,11 +47,12 @@ const stage1 = function(neo4j, lineReader, callback) {
 
     function _doWork() {
 
-        console.log('Requesting item buffer');
         const buffer = makeItemBuffer(lineReader);
 
         if (!buffer.length) return _done();
-        console.log('Writing item buffer of', buffer.length);
+
+        console.log('Imported', lines, 'lines');
+        lines += buffer.length;
 
         session
             .run(`
