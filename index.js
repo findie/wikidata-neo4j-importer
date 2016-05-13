@@ -17,9 +17,11 @@ console.log('Found', lines, 'lines');
 
 const lineReaderSetup = (lineReader) => {
     lineReader.total = lines;
-
+    lineReader.skip = config.skip || 0;
+    
     if (!config.skip) return lineReader;
     for (let i = 0; i < config.skip; i++) {
+        if(i % config.bucket == 0) console.log('Skipping', i, '(', i / config.skip * 100, ')');
         lineReader.next();
     }
     return lineReader;

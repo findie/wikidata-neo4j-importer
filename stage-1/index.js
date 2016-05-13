@@ -37,7 +37,7 @@ const makeItemBuffer = (lineReader) => {
  */
 const stage1 = function(neo4j, lineReader, callback) {
 
-    let lines = 0;
+    let lines = lineReader.skip;
 
     console.log('Starting node creation...');
     let session = neo4j.session();

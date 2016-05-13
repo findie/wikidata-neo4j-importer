@@ -13,7 +13,8 @@ ETA.prototype.tick = function(current) {
 
     const remaining = this.full - current;
     const change = (current - this.lastCurrent);
-
+    this.lastCurrent = change;
+    
     return diff * (remaining / change);
 };
 ETA.prototype.pretty = function(current) {
