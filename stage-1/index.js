@@ -83,7 +83,7 @@ const stage1 = function(neo4j, lineReader, callback) {
                     RETURN null
 
             `, { buffer, item: helper.type.item, prop: helper.type.prop })
-            .then(()=>setTimeout(_doWork, 1000))
+            .then(_doWork)
             .catch(_done);
         buffer = null;
 
@@ -94,7 +94,7 @@ const stage1 = function(neo4j, lineReader, callback) {
             console.log('making buffer');
             buffer = makeItemBuffer(lineReader);
         });
-    }
+    };
 
     _doWork();
 };
