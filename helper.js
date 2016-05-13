@@ -4,6 +4,7 @@ function ETA(full) {
     this.full = full;
     this.lastCurrent = 0;
     this.start = Date.now();
+    this.lastEtas = [];
 }
 
 ETA.prototype.tick = function(current) {
@@ -13,20 +14,28 @@ ETA.prototype.tick = function(current) {
 
     const remaining = this.full - current;
     const change = (current - this.lastCurrent);
-    this.lastCurrent = change;
-    
-    return diff * (remaining / change);
+    this.lastCurrent = current;
+
+    const eta = diff * (remaining / change);
+    this.lastEtas.push(eta);
+    if (this.lastEtas.length > 10) this.lastEtas.shift();
+
+    return this.lastEtas.reduce((a, c)=> a + c, 0) / this.lastEtas.length;
 };
 ETA.prototype.pretty = function(current) {
     let ms = this.tick(current) | 0;
 
     let text = [];
-    text.push(ms % 1000); ms = (ms / 1000) | 0;
-    text.push(ms % 60); ms = (ms / 60) | 0;
-    text.push(ms % 60); ms = (ms / 60) | 0;
-    text.push(ms % 24); ms = (ms / 24) | 0;
+    text.push(ms % 1000);
+    ms = (ms / 1000) | 0;
+    text.push(ms % 60);
+    ms = (ms / 60) | 0;
+    text.push(ms % 60);
+    ms = (ms / 60) | 0;
+    text.push(ms % 24);
+    ms = (ms / 24) | 0;
 
-    text = text.filter(x => !!x);
+    while (!text[text.length - 1])text.pop();
 
 
     var term = ['ms', 's', 'm', 'h', 'd'];

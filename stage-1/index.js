@@ -83,7 +83,7 @@ const stage1 = function(neo4j, lineReader, callback) {
                     RETURN null
 
             `, { buffer, item: helper.type.item, prop: helper.type.prop })
-            .then(_doWork)
+            .then(()=>setTimeout(_doWork, 1000))
             .catch(_done);
         buffer = null;
 
