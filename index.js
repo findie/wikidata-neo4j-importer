@@ -27,7 +27,7 @@ const lineReaderSetup = (lineReader) => {
     return lineReader;
 };
 
-const lineReader = lineReaderSetup(new LineByLine(path.resolve(config.file), {readChunk: 1024 * 1024 * 4}));
+const lineReader = lineReaderSetup(new LineByLine(path.resolve(config.file), {readChunk: 1024 * 1024 * 64}));
 
 const stage0 = require('./stage-0');
 const stage1 = require('./stage-1');
