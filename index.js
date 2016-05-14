@@ -27,14 +27,19 @@ const lineReaderSetup = (lineReader) => {
     return lineReader;
 };
 
-const lineReader = lineReaderSetup(new LineByLine(path.resolve(config.file), {readChunk: 1024 * 1024 * 64}));
+const makeLineReader = () => lineReaderSetup(new LineByLine(path.resolve(config.file), {readChunk: 1024 * 1024 * 64}));
 
+// db cleanup
 const stage0 = require('./stage-0');
+// node importer
 const stage1 = require('./stage-1');
+// simple node relations
+const stage2 = require('./stage-2');
 
 async.series([
     (cb) => !config.do[0] ? cb() : stage0(driver, cb),
-    (cb) => !config.do[1] ? cb() : stage1(driver, lineReader, cb)
+    (cb) => !config.do[1] ? cb() : stage1(driver, makeLineReader(), cb),
+    (cb) => !config.do[2] ? cb() : stage2(driver, makeLineReader(), cb)
 ], (err) => {
     'use strict';
     console.log(err || 'done');

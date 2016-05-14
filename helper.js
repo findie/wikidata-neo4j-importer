@@ -44,3 +44,177 @@ ETA.prototype.pretty = function(current) {
 };
 
 module.exports.ETA = ETA;
+
+function Parallel(work, done, options) {
+    options = options || {};
+    options.concurrency = options.concurrency || 4;
+
+    const finished = {};
+
+    let _done = function(e, identifier) {
+        if (e) {
+            _done = _doWork = () => null;
+            return done(e);
+        }
+
+        finished[identifier] = true;
+
+        if (
+            Object
+                .keys(finished)
+                .map(k=>finished[k])
+                .filter(finished=>!finished)
+                .length == 0
+        ) {
+            return done();
+        }
+    };
+
+    let _doWork = function(identifier) {
+        work((err, finish) => {
+            if (err) return _done(err);
+
+            if (finish) return _done(null, identifier);
+
+            setImmediate(()=>_doWork(identifier));
+        });
+    };
+
+    for (var i = 0; i < options.concurrency; i++) {
+        finished[i] = false;
+
+        setTimeout(_doWork.bind(this, i), (Math.random() + i) * 500);
+    }
+}
+
+module.exports.Parallel = Parallel;
+
+const makeItemBuffer = (bucket, lineReader) => {
+
+    let line;
+
+    const itemBuffer = [];
+
+    while (itemBuffer.length < bucket && (line = lineReader.next())) {
+        line = line
+            .toString()
+            .trim()
+            .slice(0, -1);
+
+
+        // if it's the start or end of the the 72 GB of array, we ignore it
+        if (line.length < 2) continue;
+
+        const json = JSON.parse(line);
+
+        itemBuffer.push(json);
+    }
+
+    return itemBuffer;
+};
+
+module.exports.makeItemBuffer = makeItemBuffer;
+
+const firstUpper = (str) => str[0].toUpperCase() + str.substr(1);
+
+module.exports.firstUpper = firstUpper;
+
+const labelify = (str) => {
+  return str
+      .split(/\ |\-|\_|\:/)
+      .filter(x=>!!x)
+      .map(x=>firstUpper(x.toLowerCase()))
+      .join('')
+};
+
+module.exports.labelify = labelify;
+
+const relationify = (str) => {
+    return str
+        .split(/\ |\-|\_|\:/)
+        .filter(x=>!!x)
+        .map(x=>x.toUpperCase())
+        .join('_')
+};
+
+module.exports.relationify = relationify;
+
+
+const entity = {};
+
+entity.type = {
+    item: 'item',
+    prop: 'property'
+};
+
+entity.extractNodeData = (json) => {
+    switch (json.type) {
+        case entity.type.item:
+            return entity.extractNodeDataFromItem(json);
+        case entity.type.prop:
+            return entity.extractNodeDataFromProp(json);
+        default:
+            throw `Invalid item type ${json.type}`;
+    }
+};
+
+const extractStaticData = (item) => {
+    const obj = {};
+
+    if (item.labels && item.labels.en) {
+        if (Array.isArray(item.labels.en)) {
+            obj.labels = item.labels.en.map(l => (l.value || '').toString()).filter(x=>!!x)
+        } else if (item.labels.en.value) {
+            obj.labels = [(item.labels.en.value || '').toString()].filter(x=>!!x)
+        }
+    } else {
+        obj.labels = [];
+    }
+
+    if (item.descriptions && item.descriptions.en) {
+        if (Array.isArray(item.descriptions.en)) {
+            obj.descriptions = item.descriptions.en.map(l => (l.value || '').toString()).filter(x=>!!x)
+        } else if (item.descriptions.en.value) {
+            obj.descriptions = [(item.descriptions.en.value || '').toString()].filter(x=>!!x)
+        }
+    } else {
+        obj.descriptions = [];
+    }
+
+    if (item.aliases && item.aliases.en) {
+        if (Array.isArray(item.aliases.en)) {
+            obj.aliases = item.aliases.en.map(l => (l.value || '').toString()).filter(x=>!!x)
+        } else if (item.aliases.en.value) {
+            obj.aliases = [(item.aliases.en.value || '').toString()].filter(x=>!!x)
+        }
+    } else {
+        obj.aliases = [];
+    }
+
+    return obj;
+};
+
+entity.extractNodeDataFromItem = (item) => {
+    const obj = {
+        id: item.id,
+        type: item.type
+    };
+
+    Object.assign(obj, extractStaticData(item));
+
+    return obj;
+};
+
+entity.extractNodeDataFromProp = (prop) => {
+    const obj = {
+        id: prop.id,
+        datatype: prop.datatype,
+        type: prop.type
+    };
+
+    Object.assign(obj, extractStaticData(prop));
+
+    return obj;
+};
+
+module.exports.entity = entity;

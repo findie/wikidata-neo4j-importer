@@ -9,7 +9,8 @@
   },
   "do": {
     "0": true,
-    "1": true
+    "1": true,
+    "2": true
   },
   "concurrency": 4,
   "skip": 0,
