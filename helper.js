@@ -98,8 +98,9 @@ const makeItemBuffer = (bucket, lineReader) => {
     while (itemBuffer.length < bucket && (line = lineReader.next())) {
         line = line
             .toString()
-            .trim()
-            .slice(0, -1);
+            .trim();
+
+        if(line[line.length - 1] === ',') line = line.slice(0, -1);
 
 
         // if it's the start or end of the the 72 GB of array, we ignore it
