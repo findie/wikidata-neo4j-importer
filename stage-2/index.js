@@ -87,6 +87,8 @@ const stage2 = function(neo4j, lineReader, callback) {
                         return willLinkNodes.push(item);
 
                     default:
+                        if(!claim.datatype) return;
+
                         item.relSufix = relationify(claim.datatype);
                         item.label = labelify(claim.datatype);
                         if (claim.value instanceof Object) {
