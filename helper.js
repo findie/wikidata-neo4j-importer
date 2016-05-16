@@ -168,8 +168,10 @@ const extractStaticData = (item) => {
         } else if (item.labels.en.value) {
             obj.labels = [(item.labels.en.value || '').toString()].filter(x=>!!x)
         }
+        obj.label = obj.labels[0];
+        delete obj.labels;
     } else {
-        obj.labels = [];
+        obj.label = '';
     }
 
     if (item.descriptions && item.descriptions.en) {
