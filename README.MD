@@ -33,12 +33,13 @@ We recommend having:
 - `4+ CPU cores`
 - `16+ GB RAM`
 - `~200GB or storage`
-    - `~30GB` for the wikidata gzip file
+    - `~7GB` for the wikidata gzip file
     - `~70GB` for the wikidata JSON file
     - `~60GB` for neo4j database
     - `~11GB` for a compressed _(tar gz)_ backup files
+
 ### Runtime
-Tested on a 4 Core, 16GB RAM VPS at around 16h
+Tested on a 4 Core, 16GB RAM VPS from Hetzner at around 16h
 
 ### Editing the configuration file:
 `config.json` - Extra details for each property below
