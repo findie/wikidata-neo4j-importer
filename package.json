@@ -1,18 +1,26 @@
 {
-  "name": "wikidata-neo4j",
-  "version": "0.0.1",
-  "description": "Imports wikidata to neo4j",
+  "name": "wikidata-neo4j-importer",
+  "version": "1.0.0",
+  "description": "Imports WikiData JSON dumps into Neo4j in a meaningful way.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "run": "node index.js"
   },
   "author": "Stefan-Gabriel Muscalu <stefan.gabriel.muscalu@gmail.com> (http://my.corneroftheinternet.rocks/)",
   "license": "Apache-2.0",
   "dependencies": {
-    "async": "^2.0.0-rc.4",
-    "cli-color": "^1.1.0",
-    "n-readlines": "^0.2.2",
-    "neo4j-driver": "^1.0.1",
-    "slugify": "^0.1.1"
-  }
+    "async": "2.0.0-rc.4",
+    "cli-color": "1.1.0",
+    "n-readlines": "0.2.2",
+    "neo4j-driver": "1.0.1",
+    "slugify": "0.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:findie/wikidata-neo4j-importer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/findie/wikidata-neo4j-importer/issues"
+  },
+  "homepage": "https://github.com/findie/wikidata-neo4j-importer#readme"
 }
