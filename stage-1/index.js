@@ -1,4 +1,6 @@
 'use strict';
+const clc = require('cli-color');
+
 const entity = require('../helper').entity;
 const ETA = require('../helper').ETA;
 const Parallel = require('../helper').Parallel;
@@ -31,8 +33,10 @@ const stage1 = function(neo4j, lineReader, callback) {
 
         if (!buffer.length) return callback(null, true);
 
-        console.log('Imported', lines, 'lines');
-        console.log((((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines));
+        console.log(clc.yellowBright(`Imported ${lines} lines`));
+        console.log(clc.greenBright(
+            (((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines)
+        ));
         lines += buffer.length;
 
         session

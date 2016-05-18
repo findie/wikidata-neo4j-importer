@@ -12,8 +12,9 @@
     "1": true,
     "2": true
   },
+  "verbose": false,
   "concurrency": 4,
   "skip": 0,
   "lines": 21225524,
-  "bucket": 10
+  "bucket": 1000
 }

@@ -1,14 +1,17 @@
 'use strict';
 const async = require('async');
+const clc = require('cli-color');
 
 const labelify = require('../helper').labelify;
 const relationify = require('../helper').relationify;
+const distinctify = require('../helper').distinctify;
+const pad = require('../helper').pad;
 
 const ETA = require('../helper').ETA;
 const Parallel = require('../helper').Parallel;
-const firstUpper = require('../helper').firstUpper;
 
 const config = require('../config.json');
+const verbose = config.verbose;
 
 const makeItemBuffer = require('../helper').makeItemBuffer.bind(null, config.bucket);
 /**
@@ -17,25 +20,49 @@ const makeItemBuffer = require('../helper').makeItemBuffer.bind(null, config.buc
  * @param {LineByLine} lineReader
  * @param {function(Error)} callback
  */
-const stage2 = function(neo4j, lineReader, callback) {
+const stage2 = function (neo4j, lineReader, callback) {
     let lines = lineReader.skip;
 
     console.log('Starting simple node relationship creation...');
     let session = neo4j.session();
     const eta = new ETA(lineReader.total);
 
-    const _done = function(e) {
+    const _done = function (e) {
         session.close();
         callback(e);
     };
 
-    const _doWork = function(callback) {
+    // we first get the props
+    // there are about 2.3k so we can store in memory
+
+    const props = {};
+
+    const _getProps = function (cb) {
+        session
+            .run(`
+                MATCH (p:Property) 
+                RETURN 
+                    p.id AS id,
+                    p.label AS label
+            `)
+            .then(data => {
+                data.records.forEach(prop => {
+                    props[prop.get('id')] = relationify(prop.get('label'))
+                });
+                cb();
+            })
+            .catch(cb);
+    }
+
+    const _doWork = function (callback) {
         const buffer = makeItemBuffer(lineReader);
 
         if (!buffer.length) return callback(null, true);
 
-        console.log('Imported', lines, 'lines');
-        console.log((((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines));
+        console.log(clc.yellowBright(`Imported ${lines} lines`));
+        console.log(clc.greenBright(
+            (((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines)
+        ));
         lines += buffer.length;
 
         const willLinkNodes = [];
@@ -72,29 +99,27 @@ const stage2 = function(neo4j, lineReader, callback) {
             obj.claims.forEach(claim => {
                 var item = {
                     startID: obj.id,
+                    relation: props[claim.prop] || "CLAIM",
                     prop: claim.prop,
                     id: claim.id
                 };
 
                 switch (claim.datatype) {
                     case 'wikibase-property':
-                        item.relSufix = 'prop';
                         item.endID = 'P' + claim.value['numeric-id'];
                         return willLinkNodes.push(item);
                     case 'wikibase-item':
-                        item.relSufix = 'item';
                         item.endID = 'Q' + claim.value['numeric-id'];
                         return willLinkNodes.push(item);
 
                     default:
-                        if(!claim.datatype) return;
-
-                        item.relSufix = relationify(claim.datatype);
+                        if (!claim.datatype) return;
+                        
                         item.label = labelify(claim.datatype);
                         if (claim.value instanceof Object) {
                             item.node = claim.value;
                         } else {
-                            item.node = { value: claim.value }
+                            item.node = {value: claim.value}
                         }
                         return willGenerateNodes.push(item);
                 }
@@ -105,27 +130,13 @@ const stage2 = function(neo4j, lineReader, callback) {
         const link = willLinkNodes.length === 0 ?
             (cb) => cb() :
             (cb) => {
-                session
-                    .run(`
-                            UNWIND {data} AS claim
-                            WITH claim
-                                WHERE claim.relSufix = 'item'
-                            WITH claim
-                            
-                            MATCH (start:Entity), (end:Entity) 
-                                WHERE 
-                                    start.id = claim.startID AND
-                                    end.id = claim.endID
-                            WITH start, end, claim
-                               
-                            MERGE (start)-[:CLAIM_ITEM {by: claim.prop}]->(end)
-                            RETURN null
-                            
-                        UNION
-                            
-                            UNWIND {data} AS claim
-                            WITH claim
-                                WHERE claim.relSufix = 'prop'
+
+                var distinctRels = distinctify(willLinkNodes, 'relation');
+
+                const runForRelType = function(relType, items, dbcb) {
+                    session
+                        .run(`
+                            UNWIND {items} AS claim
                             WITH claim
                             
                             MATCH (start:Entity), (end:Entity) 
@@ -134,68 +145,80 @@ const stage2 = function(neo4j, lineReader, callback) {
                                     end.id = claim.endID
                             WITH start, end, claim
                                
-                            MERGE (start)-[:CLAIM_PROPERTY {by: claim.prop}]->(end)
-                            RETURN null
-                        `, { data: willLinkNodes })
-                    .then(() => {
-                        cb();
-                    })
-                    .catch(cb);
+                            MERGE (start)-[:${relType} {by: claim.prop, id: claim.id}]->(end)
+                        `, {items})
+                        .then(()=>dbcb())
+                        .catch(dbcb);
+                }
+
+                const timeKey = clc.blue(pad('Linking entities', 70, true));
+                console.time(timeKey);
+                async.series(
+                    Object
+                        .keys(distinctRels)
+                        .map(relType => {
+                            return runForRelType.bind(
+                                this,
+                                relType,
+                                distinctRels[relType]
+                            );
+                        }),
+                    (err) => {
+                        console.timeEnd(timeKey);
+                        cb(err);
+                    }
+                )
             };
 
         const generate = willGenerateNodes.length === 0 ?
             (cb) => cb() :
             (cb) => {
-                const types = {};
-                willGenerateNodes.forEach(claim => {
-                    if (!types[claim.label]) {
-                        types[claim.label] = {
-                            label: claim.label,
-                            relSufix: claim.relSufix,
-                            claims: []
-                        }
-                    }
 
-                    types[claim.label].claims.push({
-                        startID: claim.startID,
-                        prop: claim.prop,
-                        node: claim.node,
-                        id: claim.id
-                    });
-                });
+                var distinctRels = distinctify(willGenerateNodes, ['relation', 'label']);
 
+                const runForRelTypeAndLabel = function(relType, label, items, dbcb) {
+                    const timeKey = verbose ?
+                        clc.red(pad(`-> Generating ${pad(label, 20, true)} and linking ${relType}`, 100, true)) :
+                        null;
+                    if(verbose) console.time(timeKey);
+
+                    session
+                        .run(`
+                            UNWIND {items} AS claim 
+                            WITH claim
+                            
+                            MATCH (start:Entity) WHERE start.id = claim.startID
+                            MERGE (end:${label}:Claim {id: claim.id}) 
+                                SET 
+                                    end.id = claim.id,
+                                    end = claim.node
+                            
+                            WITH end, start, claim
+                            
+                            MERGE (start)-[:${relType} {by: claim.prop}]->(end) 
+                        `, {items})
+                        .then(()=>{
+                            if(verbose) console.timeEnd(timeKey);
+                            dbcb();
+                        })
+                        .catch(dbcb);
+                }
+
+                const timeKey = clc.yellow(pad('Generating and linking claims', 70, true));
+                console.time(timeKey);
                 async.series(
                     Object
-                        .keys(types)
-                        .map(k=>types[k])
-                        .map(type => {
-                            return (cb) => {
-                                session
-                                    .run(
-                                        `
-                                        UNWIND {data} AS claim WITH claim
-                                        
-                                        MATCH (start:Entity) WHERE start.id = claim.startID
-                                        
-                                        MERGE (end:${type.label}:Claim {id: claim.id}) 
-                                            ON CREATE SET 
-                                                end.id = claim.id
-                                            SET
-                                                end = claim.node
-                                        
-                                        WITH end, start, claim
-                                        
-                                        MERGE (start)-[:CLAIM_${type.relSufix} {by: claim.prop}]->(end) 
-                                        `,
-                                        { data: type.claims }
-                                    )
-                                    .then(()=> {
-                                        cb();
-                                    })
-                                    .catch(cb);
-                            }
+                        .keys(distinctRels)
+                        .map(key => {
+                            return runForRelTypeAndLabel.bind(
+                                this,
+                                distinctRels[key][0].relation,
+                                distinctRels[key][0].label,
+                                distinctRels[key]
+                            )
                         }),
                     (err) => {
+                        console.timeEnd(timeKey);
                         cb(err);
                     }
                 );
@@ -210,7 +233,14 @@ const stage2 = function(neo4j, lineReader, callback) {
         );
     };
 
-    Parallel(_doWork, _done, { concurrency: config.concurrency });
+    async.series([
+        _getProps
+    ], (err) => {
+        if (err) return callback(err);
+
+        Parallel(_doWork, _done, {concurrency: config.concurrency});
+    });
+
 };
 
 module.exports = stage2;

@@ -47,6 +47,6 @@ async.series([
     setTimeout(process.exit.bind(process, (err ? 1 : 0)), 5000)
 });
 
-rocess.on('uncaughtException', function (err) {
-    console.err(err.stack || err);
+process.on('uncaughtException', function (err) {
+    console.error(err.stack || err);
 });

@@ -1,5 +1,8 @@
 'use strict';
 
+const slugify = require('slugify');
+const clc = require('cli-color');
+
 function ETA(full) {
     this.full = full;
     this.lastCurrent = 0;
@@ -7,7 +10,7 @@ function ETA(full) {
     this.lastEtas = [];
 }
 
-ETA.prototype.tick = function(current) {
+ETA.prototype.tick = function (current) {
     const now = Date.now();
     const diff = now - this.start;
     this.start = now;
@@ -22,7 +25,7 @@ ETA.prototype.tick = function(current) {
 
     return this.lastEtas.reduce((a, c)=> a + c, 0) / this.lastEtas.length;
 };
-ETA.prototype.pretty = function(current) {
+ETA.prototype.pretty = function (current) {
     let ms = this.tick(current) | 0;
 
     let text = [];
@@ -51,7 +54,7 @@ function Parallel(work, done, options) {
 
     const finished = {};
 
-    let _done = function(e, identifier) {
+    let _done = function (e, identifier) {
         if (e) {
             _done = _doWork = () => null;
             return done(e);
@@ -70,7 +73,7 @@ function Parallel(work, done, options) {
         }
     };
 
-    let _doWork = function(identifier) {
+    let _doWork = function (identifier) {
         work((err, finish) => {
             if (err) return _done(err);
 
@@ -100,7 +103,7 @@ const makeItemBuffer = (bucket, lineReader) => {
             .toString()
             .trim();
 
-        if(line[line.length - 1] === ',') line = line.slice(0, -1);
+        if (line[line.length - 1] === ',') line = line.slice(0, -1);
 
 
         // if it's the start or end of the the 72 GB of array, we ignore it
@@ -121,21 +124,19 @@ const firstUpper = (str) => str[0].toUpperCase() + str.substr(1);
 module.exports.firstUpper = firstUpper;
 
 const labelify = (str) => {
-  return str
-      .split(/\ |\-|\_|\:/)
-      .filter(x=>!!x)
-      .map(x=>firstUpper(x.toLowerCase()))
-      .join('')
+    return str
+        .split(/\ |\-|\_|\:/)
+        .filter(x=>!!x)
+        .map(x=>firstUpper(x.toLowerCase()))
+        .join('')
 };
 
 module.exports.labelify = labelify;
 
-const relationify = (str) => {
-    return str
-        .split(/\ |\-|\_|\:/)
-        .filter(x=>!!x)
-        .map(x=>x.toUpperCase())
-        .join('_')
+const relationify = (str, delim) => {
+    delim = delim || '_';
+    return slugify(str.toUpperCase(), delim)
+        .replace(new RegExp(`([^a-z0-9\\${delim}]+)`, 'gi'), '');
 };
 
 module.exports.relationify = relationify;
@@ -221,3 +222,63 @@ entity.extractNodeDataFromProp = (prop) => {
 };
 
 module.exports.entity = entity;
+
+const distinctify = function (items, propKeys, nest) {
+    if (!Array.isArray(propKeys)) propKeys = [propKeys];
+
+    const distinct = {};
+    items.forEach(item => {
+        const masterKey = propKeys
+            .map(k => item[k])
+            .map(item => item instanceof Object ? JSON.stringify(item) : item)
+            .join("%%%%");
+
+        if (!distinct[masterKey]) {
+            distinct[masterKey] = [];
+        }
+
+        distinct[masterKey].push(item);
+    });
+
+    if(!nest) return distinct;
+
+    const obj = {};
+
+    const _ensureObjectForMasterKey = function (maserKey, obj) {
+        let pointer = obj;
+        const keys = maserKey.split(/%%%%/g);
+        keys.forEach(key => {
+            if (!pointer[key]) pointer[key] = {};
+            pointer = pointer[key];
+        });
+        return pointer;
+    }
+
+    Object.keys(distinct)
+        .map(key => {
+            const pointer = _ensureObjectForMasterKey(key, obj);
+
+            pointer.items = distinct[key];
+        });
+
+    return obj;
+}
+
+module.exports.distinctify = distinctify;
+
+const pad = function (str, len, right, pad) {
+    pad = pad || ' ';
+    right = right === true;
+
+    while(str.length < len){
+        if(right) {
+            str += pad;
+        }else{
+            str = pad + str;
+        }
+    }
+
+    return str;
+}
+
+module.exports.pad = pad;
