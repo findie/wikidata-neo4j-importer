@@ -8,7 +8,9 @@ The importer takes JSON dumps from [WikiData](https://dumps.wikimedia.org/wikida
 - [Neo4j](http://neo4j.com/) 3.0 +
 - [NodeJS](https://nodejs.org) 6.0 +
 - [WikiData JSON File](https://dumps.wikimedia.org/wikidatawiki/entities/)
+
 ___
+
 ## Setup
 ### Schema
 We recommend having the following schema before starting the importer
@@ -40,7 +42,7 @@ Tested on a 4 Core, 16GB RAM VPS at around 16h
 
 ### Editing the configuration file:
 `config.json` - Extra details for each property below
-```json
+```javascript
 {
   /* the wikidata JSON file */
   "file": "./wikidata-dump.json",
