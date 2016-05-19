@@ -36,7 +36,7 @@ We recommend having:
     - `~7GB` for the wikidata gzip file
     - `~70GB` for the wikidata JSON file
     - `~60GB` for neo4j database
-    - `~11GB` for a compressed _(tar gz)_ backup files
+    - `~11GB` for each compressed _(tar gz)_ backup files
 
 ### Runtime
 Tested on a 4 Core, 16GB RAM VPS from Hetzner at around 16h

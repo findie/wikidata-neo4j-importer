@@ -7,23 +7,26 @@ function ETA(full) {
     this.full = full;
     this.lastCurrent = 0;
     this.start = Date.now();
-    this.lastEtas = [];
+    this.lastDiffs = [];
 }
 
 ETA.prototype.tick = function (current) {
     const now = Date.now();
-    const diff = now - this.start;
+    let diff = now - this.start;
     this.start = now;
+
+    if (diff) this.lastDiffs.push(diff);
+    if (this.lastDiffs.length > 100) this.lastDiffs.shift();
+
+    diff = this.lastDiffs.reduce((a, c) => a + c, 0) / this.lastDiffs.length;
 
     const remaining = this.full - current;
     const change = (current - this.lastCurrent);
     this.lastCurrent = current;
 
     const eta = diff * (remaining / change);
-    if (!isNaN(parseInt(eta))) this.lastEtas.push(eta);
-    if (this.lastEtas.length > 10) this.lastEtas.shift();
 
-    return this.lastEtas.reduce((a, c)=> a + c, 0) / this.lastEtas.length;
+    return eta;
 };
 ETA.prototype.pretty = function (current) {
     let ms = this.tick(current) | 0;
@@ -248,7 +251,7 @@ const distinctify = function (items, propKeys, nest) {
         distinct[masterKey].push(item);
     });
 
-    if(!nest) return distinct;
+    if (!nest) return distinct;
 
     const obj = {};
 
@@ -278,10 +281,10 @@ const pad = function (str, len, right, pad) {
     pad = pad || ' ';
     right = right === true;
 
-    while(str.length < len){
-        if(right) {
+    while (str.length < len) {
+        if (right) {
             str += pad;
-        }else{
+        } else {
             str = pad + str;
         }
     }
