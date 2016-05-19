@@ -54,7 +54,7 @@ const stage2 = function (neo4j, lineReader, callback) {
             .catch(cb);
     }
 
-    const _doWork = function (callback) {
+    const _doWork = function (callback, identifier) {
         const buffer = makeItemBuffer(lineReader);
 
         if (!buffer.length) return callback(null, true);
@@ -151,7 +151,7 @@ const stage2 = function (neo4j, lineReader, callback) {
                         .catch(dbcb);
                 }
 
-                const timeKey = clc.blue(pad('Linking entities', 70, true));
+                const timeKey = clc.blue(pad(`Linking entities (${identifier})`, 70, true));
                 console.time(timeKey);
                 async.series(
                     Object
@@ -178,7 +178,7 @@ const stage2 = function (neo4j, lineReader, callback) {
 
                 const runForRelTypeAndLabel = function(relType, label, items, dbcb) {
                     const timeKey = verbose ?
-                        clc.red(pad(`-> Generating ${pad(label, 20, true)} and linking ${relType}`, 100, true)) :
+                        clc.red(pad(`-> Generating ${pad(label, 20, true)} and linking ${relType} (${identifier})`, 100, true)) :
                         null;
                     if(verbose) console.time(timeKey);
 
@@ -204,7 +204,7 @@ const stage2 = function (neo4j, lineReader, callback) {
                         .catch(dbcb);
                 }
 
-                const timeKey = clc.yellow(pad('Generating and linking claims', 70, true));
+                const timeKey = clc.yellow(pad(`Generating and linking claims (${identifier})`, 70, true));
                 console.time(timeKey);
                 async.series(
                     Object

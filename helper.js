@@ -83,7 +83,7 @@ function Parallel(work, done, options) {
             if (finish) return _done(null, identifier);
 
             setImmediate(()=>_doWork(identifier));
-        });
+        }, identifier);
     };
 
     for (var i = 0; i < options.concurrency; i++) {
