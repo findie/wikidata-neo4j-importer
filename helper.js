@@ -133,10 +133,17 @@ const labelify = (str) => {
 
 module.exports.labelify = labelify;
 
+const _slugify = (str, delim) => {
+    delim = delim || '-';
+    return slugify(str, delim)
+        .replace(new RegExp(`([^a-z0-9\\${delim}]+)`, 'gi'), '');
+};
+
+module.exports.slugify = _slugify;
+
 const relationify = (str, delim) => {
     delim = delim || '_';
-    return slugify(str.toUpperCase(), delim)
-        .replace(new RegExp(`([^a-z0-9\\${delim}]+)`, 'gi'), '');
+    return module.exports.slugify(str, delim).toUpperCase();
 };
 
 module.exports.relationify = relationify;
@@ -174,6 +181,7 @@ const extractStaticData = (item) => {
     } else {
         obj.label = '';
     }
+    obj.slug = module.exports.slugify(obj.label).toLowerCase();
 
     if (item.descriptions && item.descriptions.en) {
         if (Array.isArray(item.descriptions.en)) {
