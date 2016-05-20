@@ -146,7 +146,12 @@ module.exports.slugify = _slugify;
 
 const relationify = (str, delim) => {
     delim = delim || '_';
-    return module.exports.slugify(str, delim).toUpperCase();
+    const relation = module.exports.slugify(str, delim).toUpperCase();
+    
+    if (!isNaN(parseInt(relation[0]))) {
+        return '_' + relation
+    }
+    return relation;
 };
 
 module.exports.relationify = relationify;
