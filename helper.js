@@ -89,7 +89,7 @@ function Parallel(work, done, options) {
     for (var i = 0; i < options.concurrency; i++) {
         finished[i] = false;
 
-        setTimeout(_doWork.bind(this, i), (Math.random() + i) * 500);
+        setTimeout(_doWork.bind(this, i), (Math.random() + i) * 1000);
     }
 }
 
@@ -147,7 +147,7 @@ module.exports.slugify = _slugify;
 const relationify = (str, delim) => {
     delim = delim || '_';
     const relation = module.exports.slugify(str, delim).toUpperCase();
-    
+
     if (!isNaN(parseInt(relation[0]))) {
         return '_' + relation
     }
@@ -278,7 +278,7 @@ const distinctify = function (items, propKeys, nest) {
         });
 
     return obj;
-}
+};
 
 module.exports.distinctify = distinctify;
 
@@ -295,6 +295,22 @@ const pad = function (str, len, right, pad) {
     }
 
     return str;
-}
+};
 
 module.exports.pad = pad;
+
+const deadLockRetrier = function (session, command, params, _then, _catch){
+    session
+        .run(command, params)
+        .then(_then)
+        .catch((err) => {
+            if (err.signature = 127) {
+                // deadlock detected
+                console.log(clc.bold.red('Deadlock detected and averted, waiting 200ms!'));
+                return setTimeout(() => deadLockRetrier(session, command, params, _then, _catch), 200);
+            }
+            return _catch(err);
+        });
+}
+
+module.exports.deadLockRetrier = deadLockRetrier;

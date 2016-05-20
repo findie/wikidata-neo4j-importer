@@ -9,8 +9,10 @@ const pad = require('../helper').pad;
 
 const ETA = require('../helper').ETA;
 const Parallel = require('../helper').Parallel;
+const deadLockRetrier = require('../helper').deadLockRetrier;
 
 const config = require('../config.json');
+
 const verbose = config.verbose;
 
 const makeItemBuffer = require('../helper').makeItemBuffer.bind(null, config.bucket);
@@ -24,11 +26,19 @@ const stage2 = function (neo4j, lineReader, callback) {
     let lines = lineReader.skip;
 
     console.log('Starting simple node relationship creation...');
-    let session = neo4j.session();
+
+    const sessions = {};
+    for (let i = 0; i < config.concurrency; i++) {
+        sessions[i] = neo4j.session();
+    }
+
     const eta = new ETA(lineReader.total);
 
     const _done = function (e) {
-        session.close();
+        for (let i = 0; i < config.concurrency; i++) {
+            sessions[i].close();
+        }
+
         callback(e);
     };
 
@@ -38,7 +48,7 @@ const stage2 = function (neo4j, lineReader, callback) {
     const props = {};
 
     const _getProps = function (cb) {
-        session
+        sessions[0]
             .run(`
                 MATCH (p:Property) 
                 RETURN 
@@ -52,10 +62,11 @@ const stage2 = function (neo4j, lineReader, callback) {
                 cb();
             })
             .catch(cb);
-    }
+    };
 
     const _doWork = function (callback, identifier) {
         const buffer = makeItemBuffer(lineReader);
+        const session = sessions[identifier];
 
         if (!buffer.length) return callback(null, true);
 
@@ -114,7 +125,7 @@ const stage2 = function (neo4j, lineReader, callback) {
 
                     default:
                         if (!claim.datatype) return;
-                        
+
                         item.label = labelify(claim.datatype);
                         if (claim.value instanceof Object) {
                             item.node = claim.value;
@@ -133,9 +144,10 @@ const stage2 = function (neo4j, lineReader, callback) {
 
                 var distinctRels = distinctify(willLinkNodes, 'relation');
 
-                const runForRelType = function(relType, items, dbcb) {
-                    session
-                        .run(`
+                const runForRelType = function (relType, items, dbcb) {
+                    deadLockRetrier(
+                        session,
+                        `
                             UNWIND {items} AS claim
                             WITH claim
                             
@@ -146,10 +158,12 @@ const stage2 = function (neo4j, lineReader, callback) {
                             WITH start, end, claim
                                
                             MERGE (start)-[:${relType} {by: claim.prop, id: claim.id}]->(end)
-                        `, {items})
-                        .then(()=>dbcb())
-                        .catch(dbcb);
-                }
+                        `,
+                        {items},
+                        ()=>dbcb(),
+                        dbcb
+                    )
+                };
 
                 const timeKey = clc.blue(pad(`Linking entities (${identifier})`, 70, true));
                 console.time(timeKey);
@@ -176,14 +190,14 @@ const stage2 = function (neo4j, lineReader, callback) {
 
                 var distinctRels = distinctify(willGenerateNodes, ['relation', 'label']);
 
-                const runForRelTypeAndLabel = function(relType, label, items, dbcb) {
+                const runForRelTypeAndLabel = function (relType, label, items, dbcb) {
                     const timeKey = verbose ?
                         clc.red(pad(`-> Generating ${pad(label, 20, true)} and linking ${relType} (${identifier})`, 100, true)) :
                         null;
-                    if(verbose) console.time(timeKey);
-
-                    session
-                        .run(`
+                    if (verbose) console.time(timeKey);
+                    deadLockRetrier(
+                        session,
+                        `
                             UNWIND {items} AS claim 
                             WITH claim
                             
@@ -196,12 +210,14 @@ const stage2 = function (neo4j, lineReader, callback) {
                             WITH end, start, claim
                             
                             MERGE (start)-[:${relType} {by: claim.prop}]->(end) 
-                        `, {items})
-                        .then(()=>{
-                            if(verbose) console.timeEnd(timeKey);
+                        `,
+                        {items},
+                        ()=> {
+                            if (verbose) console.timeEnd(timeKey);
                             dbcb();
-                        })
-                        .catch(dbcb);
+                        },
+                        dbcb
+                    );
                 }
 
                 const timeKey = clc.yellow(pad(`Generating and linking claims (${identifier})`, 70, true));
