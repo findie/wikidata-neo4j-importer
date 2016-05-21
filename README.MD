@@ -35,11 +35,16 @@ We recommend having:
 - `~200GB or storage`
     - `~7GB` for the wikidata gzip file
     - `~70GB` for the wikidata JSON file
-    - `~60GB` for neo4j database
-    - `~11GB` for each compressed _(tar gz)_ backup files
+    - `~90GB` for neo4j database
+    - `~6GB` for each compressed _(tar gz)_ backup file
+
+#### Note on storage
+You can configure Neo4j to not keep transaction logs which will decrease the database size from
+`~90GB` to `~25GB`, or after importing, shutdown Neo4j, navigate to the storage files _(graph
+.db/)_ and delete all the `neostore.transaction.db.*` files, then start the database back up.
 
 ### Runtime
-Tested on a 4 Core, 16GB RAM VPS from Hetzner at around 16h
+Tested on a 4 Core, 16GB RAM VPS with SSD's from Hetzner at around 16h
 
 ### Editing the configuration file:
 `config.json` - Extra details for each property below
