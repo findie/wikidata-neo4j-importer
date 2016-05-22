@@ -10,7 +10,7 @@ function ETA(full) {
     this.lastDiffs = [];
 }
 
-ETA.prototype.tick = function (current) {
+ETA.prototype.tick = function(current) {
     const now = Date.now();
     let diff = now - this.start;
     this.start = now;
@@ -28,7 +28,7 @@ ETA.prototype.tick = function (current) {
 
     return eta;
 };
-ETA.prototype.pretty = function (current) {
+ETA.prototype.pretty = function(current) {
     let ms = this.tick(current) | 0;
 
     let text = [];
@@ -57,7 +57,7 @@ function Parallel(work, done, options) {
 
     const finished = {};
 
-    let _done = function (e, identifier) {
+    let _done = function(e, identifier) {
         if (e) {
             _done = _doWork = () => null;
             return done(e);
@@ -76,7 +76,7 @@ function Parallel(work, done, options) {
         }
     };
 
-    let _doWork = function (identifier) {
+    let _doWork = function(identifier) {
         work((err, finish) => {
             if (err) return _done(err);
 
@@ -239,7 +239,7 @@ entity.extractNodeDataFromProp = (prop) => {
 
 module.exports.entity = entity;
 
-const distinctify = function (items, propKeys, nest) {
+const distinctify = function(items, propKeys, nest) {
     if (!Array.isArray(propKeys)) propKeys = [propKeys];
 
     const distinct = {};
@@ -260,7 +260,7 @@ const distinctify = function (items, propKeys, nest) {
 
     const obj = {};
 
-    const _ensureObjectForMasterKey = function (maserKey, obj) {
+    const _ensureObjectForMasterKey = function(maserKey, obj) {
         let pointer = obj;
         const keys = maserKey.split(/%%%%/g);
         keys.forEach(key => {
@@ -282,7 +282,7 @@ const distinctify = function (items, propKeys, nest) {
 
 module.exports.distinctify = distinctify;
 
-const pad = function (str, len, right, pad) {
+const pad = function(str, len, right, pad) {
     pad = pad || ' ';
     right = right === true;
 
@@ -299,18 +299,25 @@ const pad = function (str, len, right, pad) {
 
 module.exports.pad = pad;
 
-const deadLockRetrier = function (session, command, params, _then, _catch){
+const deadLockRetrier = function(session, command, params, _then, _catch) {
     session
         .run(command, params)
-        .then(_then)
-        .catch((err) => {
-            if (err.signature = 127) {
-                // deadlock detected
-                console.log(clc.bold.red('Deadlock detected and averted, waiting 200ms!'));
-                return setTimeout(() => deadLockRetrier(session, command, params, _then, _catch), 200);
+        .subscribe({
+            onCompleted: function() {
+                _then()
+            },
+            onError: function(err) {
+                if (err.signature = 127) {
+                    // deadlock detected
+
+                    const wait = (500 + Math.random() * 500) | 0;
+                    console.log(clc.bold.red(`Deadlock detected and averted, waiting ${wait}ms!`));
+                    return setTimeout(() => deadLockRetrier(session, command, params, _then, _catch), wait);
+                }
+                return _catch(err);
             }
-            return _catch(err);
         });
 }
 
 module.exports.deadLockRetrier = deadLockRetrier;
+
