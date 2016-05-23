@@ -35,11 +35,14 @@ const stage0 = require('./stage-0');
 const stage1 = require('./stage-1');
 // simple node relations
 const stage2 = require('./stage-2');
+// linking claims to outgoing items
+const stage3 = require('./stage-3');
 
 async.series([
     (cb) => !config.do[0] ? cb() : stage0(driver, cb),
     (cb) => !config.do[1] ? cb() : stage1(driver, makeLineReader(), cb),
-    (cb) => !config.do[2] ? cb() : stage2(driver, makeLineReader(), cb)
+    (cb) => !config.do[2] ? cb() : stage2(driver, makeLineReader(), cb),
+    (cb) => !config.do[3] ? cb() : stage3(driver, makeLineReader(), cb)
 ], (err) => {
     'use strict';
     console.log(err || 'done');

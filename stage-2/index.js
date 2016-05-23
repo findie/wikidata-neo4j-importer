@@ -14,8 +14,6 @@ const Stash = require('./stash');
 
 const config = require('../config.json');
 
-const verbose = config.verbose;
-
 const makeItemBuffer = require('../helper').makeItemBuffer.bind(null, config.bucket);
 
 const linkNodes = function _linkNodes(session, willLinkNodes, identifier, cb) {
