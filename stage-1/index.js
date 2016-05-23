@@ -1,5 +1,6 @@
 'use strict';
 const clc = require('cli-color');
+const async = require('async');
 
 const entity = require('../helper').entity;
 const ETA = require('../helper').ETA;
@@ -39,32 +40,26 @@ const stage1 = function(neo4j, lineReader, callback) {
         ));
         lines += buffer.length;
 
-        session
-            .run(`
+        function _doQuery(buffer, extraLabel, callback) {
+            buffer.forEach(x => delete x.type);
+            session
+                .run(`
                     UNWIND {buffer} AS item WITH item
-                    WHERE item.type = {item}
-                    WITH item
-                    MERGE (n:Item:Entity {id: item.id})
-                        ON CREATE SET 
+                    MERGE (n:${extraLabel}:Entity {id: item.id})
+                        ON CREATE SET
                             n = item
-                    RETURN null
-                    
-                UNION
-                
-                    UNWIND {buffer} AS item WITH item
-                    WHERE item.type = {prop}
-                    WITH item
-                    MERGE (n:Property:Entity {id: item.id})
-                        ON CREATE SET 
-                            n = item
-                    RETURN null
+                `, { buffer })
+                .then(()=>callback())
+                .catch(callback)
+        }
 
-            `, { buffer, item: entity.type.item, prop: entity.type.prop })
-            .then(()=>callback())
-            .catch((e)=>callback(e));
+        async.series([
+            _doQuery.bind(null, buffer.filter(x => x.type === entity.type.item), 'Item'),
+            _doQuery.bind(null, buffer.filter(x => x.type === entity.type.prop), 'Property')
+        ], callback);
     };
 
-    Parallel(_doWork, _done, {concurrency: config.concurrency});
+    Parallel(_doWork, _done, { concurrency: config.concurrency });
 };
 
 
