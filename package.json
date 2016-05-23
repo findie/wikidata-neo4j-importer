@@ -1,6 +1,6 @@
 {
   "name": "wikidata-neo4j-importer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Imports WikiData JSON dumps into Neo4j in a meaningful way.",
   "main": "index.js",
   "scripts": {
