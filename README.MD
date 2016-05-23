@@ -104,6 +104,10 @@ _Recommended:_
 Reads the JSON file `16MB` at a time and extracts `bucket` lines, then processes links between
 entities proxied by properties
 
+### Stage 3 - Extra Linking for :Quantity and :GlobeCoordinate
+Runs a couple of extra queries to link `:Quantity -[UNIT_TYPE]-> :Item` and `:GlobeCoordinate -[GLOBE_TYPE]-> :Item`.  
+ 
+
 ## Concurrency
 The amount of running queries on the DB at a time. Note that the queries have different
 complexities and running time
