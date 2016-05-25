@@ -27,7 +27,7 @@ const stage3 = function(neo4j, lineReader, callback) {
                 MATCH (e:Entity) WHERE e.id = itemId
 
                 MERGE (q)-[:UNIT_TYPE]->(e)
-                DELETE q.unit
+                REMOVE q.unit
             `)
             .then(() => {
                 console.timeEnd(timeKey);
@@ -50,7 +50,7 @@ const stage3 = function(neo4j, lineReader, callback) {
                 MATCH (e:Entity) WHERE e.id = itemId
 
                 MERGE (q)-[:GLOBE_TYPE]->(e)
-                DELETE q.globe
+                REMOVE q.globe
             `)
             .then(() => {
                 console.timeEnd(timeKey);
