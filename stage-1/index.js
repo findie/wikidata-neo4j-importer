@@ -56,7 +56,9 @@ const stage1 = function(neo4j, lineReader, callback) {
         async.series([
             _doQuery.bind(null, buffer.filter(x => x.type === entity.type.item), 'Item'),
             _doQuery.bind(null, buffer.filter(x => x.type === entity.type.prop), 'Property')
-        ], callback);
+        ], (err) => {
+            callback(err);
+        });
     };
 
     Parallel(_doWork, _done, { concurrency: config.concurrency });
