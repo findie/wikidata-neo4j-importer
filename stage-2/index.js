@@ -98,8 +98,8 @@ const flushClaims = function _flushClaims(session, identifier, itemKeys, items, 
             MERGE (end:Claim {id: claim.id})
                 SET
                     end:${itemKeys[0]},
-                    end.id = claim.id,
-                    end = claim.node
+                    end = claim.node,
+                    end.id = claim.id
 
             WITH end, start, claim
 
