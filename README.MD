@@ -15,26 +15,19 @@ ___
 ### Schema
 We recommend having the following schema before starting the importer
 ```
-Indexes
-  ON :Claim(id)     ONLINE (for uniqueness constraint)
-  ON :Entity(label) ONLINE
-  ON :Entity(id)    ONLINE (for uniqueness constraint)
-  ON :Item(id)      ONLINE (for uniqueness constraint)
-  ON :Property(id)  ONLINE (for uniqueness constraint)
-
-Constraints
-  ON (item:Item) ASSERT item.id IS UNIQUE
-  ON (property:Property) ASSERT property.id IS UNIQUE
-  ON (entity:Entity) ASSERT entity.id IS UNIQUE
-  ON (claim:Claim) ASSERT claim.id IS UNIQUE
+CREATE CONSTRAINT ON (item:Item) ASSERT item.id IS UNIQUE;
+CREATE CONSTRAINT ON (property:Property) ASSERT property.id IS UNIQUE;
+CREATE CONSTRAINT ON (entity:Entity) ASSERT entity.id IS UNIQUE;
+CREATE CONSTRAINT ON (claim:Claim) ASSERT claim.id IS UNIQUE;
+CREATE INDEX ON :Entity(label);
 ```
 ### Hardware
 We recommend having:
 - `4+ CPU cores`
 - `16+ GB RAM`
 - `~200GB or storage`
-    - `~7GB` for the wikidata gzip file
-    - `~70GB` for the wikidata JSON file
+    - `~7GB` for the Wikidata gzip file
+    - `~120GB` for the Wikidata JSON file
     - `~90GB` for neo4j database
     - `~6GB` for each compressed _(tar gz)_ backup file
 
@@ -50,7 +43,7 @@ Tested on a 4 Core, 16GB RAM VPS with SSD's from Hetzner at around 16h
 `config.json` - Extra details for each property below
 ```javascript
 {
-  /* the wikidata JSON file */
+  /* the Wikidata JSON file */
   "file": "./wikidata-dump.json",
 
   /* neo4j connection details */
@@ -119,7 +112,7 @@ The number of lines skipped from the start of the file.
 If something goes wrong, instead of rerunning the stage to that point in the file, it just skips
 that number of lines
 
-Since the importer is `idempotent` keeping it to 0 has no other efect than the runtime
+Since the importer is `idempotent` keeping it to 0 has no other effect than the runtime
 
 _Recommended: `0`_
 
