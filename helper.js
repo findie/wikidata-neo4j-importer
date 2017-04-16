@@ -103,10 +103,8 @@ const BRACKET_END_BUFFER = new Buffer([BRACKET_END]);
 const COMMA = ','.charCodeAt(0);
 
 const makeItemBuffer = (bucket, lineReader) => {
-  console.time('make item buffer');
   let line;
 
-  console.time('Buff construct');
   const itemBuffers = new Array(bucket + 2);
   let itemBuffersLen = 0;
 
@@ -130,13 +128,8 @@ const makeItemBuffer = (bucket, lineReader) => {
   itemBuffers.length = itemBuffersLen;
 
   const bigBuffer = Buffer.concat(itemBuffers);
-  console.timeEnd('Buff construct');
 
-  console.time('JSON Parse');
   const output = JSON.parse(bigBuffer);
-  console.timeEnd('JSON Parse');
-
-  console.timeEnd('make item buffer');
 
   return output;
 };
