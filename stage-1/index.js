@@ -18,51 +18,53 @@ const makeItemBuffer = require('../helper').makeItemBuffer.bind(null, config.buc
  */
 const stage1 = function(neo4j, lineReader, callback) {
 
-    let lines = lineReader.skip;
+  let lines = lineReader.skip;
 
-    console.log('Starting node creation...');
-    let session = neo4j.session();
-    const eta = new ETA(lineReader.total);
+  console.log('Starting node creation...');
+  let session = neo4j.session();
+  const eta = new ETA(lineReader.total);
 
-    const _done = function(e) {
-        session.close();
-        callback(e);
-    };
+  const _done = function(e) {
+    session.close();
+    callback(e);
+  };
 
-    const _doWork = function(callback) {
-        console.time('make buffer');
-        const buffer = makeItemBuffer(lineReader).d_map(entity.extractNodeData);
-        console.timeEnd('make buffer');
+  const _doWork = function(callback, identifier) {
+    console.time('make buffer');
+    const buffer = makeItemBuffer(lineReader).d_map(entity.extractNodeData);
+    console.timeEnd('make buffer');
 
-        if (!buffer.length) return callback(null, true);
+    if (!buffer.length) return callback(null, true);
 
-        console.log(clc.yellowBright(`Imported ${lines} lines`));
-        console.log(clc.greenBright(
-            (((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines)
-        ));
-        lines += buffer.length;
+    console.log(clc.yellowBright(`Imported ${lines} lines`));
+    console.log(clc.greenBright(
+      (((lines / lineReader.total) * 100000) | 0) / 1000 + '%', 'done!', ' -> ', 'Remaining', eta.pretty(lines)
+    ));
+    lines += buffer.length;
 
-        function _doQuery(buffer, extraLabel, callback) {
-            buffer.forEach(x => delete x.type);
-            session
-                .run(`
-                    UNWIND {buffer} AS item WITH item
-                    MERGE (n:${extraLabel}:Entity {id: item.id})
-                        ON CREATE SET
-                            n = item
-                `, { buffer })
-                .then(_ => callback(), callback)
-        }
+    function _doQuery(buffer, extraLabel, callback) {
+      buffer.forEach(x => delete x.type);
+      session
+        .run(`
+          UNWIND {buffer} AS nodeData 
+          CALL apoc.create.node([ {extraLabel}, 'Entity' ], {}) YIELD node
+          SET node = nodeData
+          RETURN COUNT(*)
+                `, { buffer, extraLabel })
+        .then(_ => callback(), callback)
+    }
 
-        async.series([
-            _doQuery.bind(null, buffer.d_filter(x => x.type === entity.type.item), 'Item'),
-            _doQuery.bind(null, buffer.d_filter(x => x.type === entity.type.prop), 'Property')
-        ], (err) => {
-            callback(err);
-        });
-    };
+    console.time('CREATE Nodes ' + identifier);
+    async.series([
+      _doQuery.bind(null, buffer.d_filter(x => x.type === entity.type.item), 'Item'),
+      _doQuery.bind(null, buffer.d_filter(x => x.type === entity.type.prop), 'Property')
+    ], (err) => {
+      console.timeEnd('CREATE Nodes ' + identifier);
+      callback(err);
+    });
+  };
 
-    Parallel(_doWork, _done, { concurrency: config.concurrency });
+  Parallel(_doWork, _done, { concurrency: config.concurrency });
 };
 
 
