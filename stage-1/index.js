@@ -21,11 +21,9 @@ const stage1 = function(neo4j, lineReader, callback) {
   let lines = lineReader.skip;
 
   console.log('Starting node creation...');
-  let session = neo4j.session();
   const eta = new ETA(lineReader.total);
 
   const _done = function(e) {
-    session.close();
     callback(e);
   };
 
@@ -43,6 +41,8 @@ const stage1 = function(neo4j, lineReader, callback) {
     lines += buffer.length;
 
     function _doQuery(buffer, extraLabel, callback) {
+      let session = neo4j.session();
+
       buffer.forEach(x => delete x.type);
       session
         .run(`
@@ -51,7 +51,13 @@ const stage1 = function(neo4j, lineReader, callback) {
           SET node = nodeData
           RETURN COUNT(*)
                 `, { buffer, extraLabel })
-        .then(_ => callback(), callback)
+        .then(_ => {
+          session.close();
+          callback()
+        }, err => {
+          session.close();
+          callback(err);
+        })
     }
 
     console.time('CREATE Nodes ' + identifier);

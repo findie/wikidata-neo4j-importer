@@ -8,14 +8,14 @@
     }
   },
   "do": {
-    "0": false,
+    "0": true,
     "1": true,
     "2": true,
     "3": true
   },
-  "verbose": false,
-  "concurrency": 4,
+  "verbose": true,
+  "concurrency": 2,
   "skip": 0,
-  "lines": 21225524,
+  "lines": null,
   "bucket": 1000
 }
