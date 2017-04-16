@@ -30,7 +30,9 @@ const stage1 = function(neo4j, lineReader, callback) {
     };
 
     const _doWork = function(callback) {
-        const buffer = makeItemBuffer(lineReader).map(entity.extractNodeData);
+        console.time('make buffer');
+        const buffer = makeItemBuffer(lineReader).d_map(entity.extractNodeData);
+        console.timeEnd('make buffer');
 
         if (!buffer.length) return callback(null, true);
 
@@ -49,13 +51,12 @@ const stage1 = function(neo4j, lineReader, callback) {
                         ON CREATE SET
                             n = item
                 `, { buffer })
-                .then(()=>callback())
-                .catch(callback)
+                .then(_ => callback(), callback)
         }
 
         async.series([
-            _doQuery.bind(null, buffer.filter(x => x.type === entity.type.item), 'Item'),
-            _doQuery.bind(null, buffer.filter(x => x.type === entity.type.prop), 'Property')
+            _doQuery.bind(null, buffer.d_filter(x => x.type === entity.type.item), 'Item'),
+            _doQuery.bind(null, buffer.d_filter(x => x.type === entity.type.prop), 'Property')
         ], (err) => {
             callback(err);
         });

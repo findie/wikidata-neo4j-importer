@@ -38,6 +38,7 @@ const stage2 = require('./stage-2');
 // linking claims to outgoing items
 const stage3 = require('./stage-3');
 
+console.time('Done!');
 async.series([
     (cb) => !config.do[0] ? cb() : stage0(driver, cb),
     (cb) => !config.do[1] ? cb() : stage1(driver, makeLineReader(), cb),
@@ -45,7 +46,8 @@ async.series([
     (cb) => !config.do[3] ? cb() : stage3(driver, makeLineReader(), cb)
 ], (err) => {
     'use strict';
-    console.log(err || 'done');
+    err && console.log(err);
+    console.timeEnd('Done!');
     console.log('exiting in 5 sec');
     setTimeout(process.exit.bind(process, (err ? 1 : 0)), 5000)
 });

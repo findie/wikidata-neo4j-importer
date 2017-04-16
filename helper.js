@@ -95,29 +95,50 @@ function Parallel(work, done, options) {
 
 module.exports.Parallel = Parallel;
 
+const BRACKET_START = '['.charCodeAt(0);
+const BRACKET_START_BUFFER = new Buffer([BRACKET_START]);
+const BRACKET_END = ']'.charCodeAt(0);
+const BRACKET_END_BUFFER = new Buffer([BRACKET_END]);
+
+const COMMA = ','.charCodeAt(0);
+
 const makeItemBuffer = (bucket, lineReader) => {
+  console.time('make item buffer');
+  let line;
 
-    let line;
+  console.time('Buff construct');
+  const itemBuffers = new Array(bucket + 2);
+  let itemBuffersLen = 0;
 
-    const itemBuffer = [];
+  itemBuffers[itemBuffersLen++] = BRACKET_START_BUFFER;
 
-    while (itemBuffer.length < bucket && (line = lineReader.next())) {
-        line = line
-            .toString()
-            .trim();
-
-        if (line[line.length - 1] === ',') line = line.slice(0, -1);
-
-
-        // if it's the start or end of the the 72 GB of array, we ignore it
-        if (line.length < 2) continue;
-
-        const json = JSON.parse(line);
-
-        itemBuffer.push(json);
+  while (itemBuffersLen - 1 < bucket && (line = lineReader.next())) {
+    if (line[0] === BRACKET_END || line[0] === BRACKET_START || line.length < 2) {
+      continue;
     }
 
-    return itemBuffer;
+    itemBuffers[itemBuffersLen++] = line;
+  }
+
+  const lastLine = itemBuffers[itemBuffersLen - 1];
+  if (lastLine[lastLine.length - 1] === COMMA) {
+    itemBuffers[itemBuffersLen - 1] = lastLine.slice(0, lastLine.length - 1);
+  }
+
+  itemBuffers[itemBuffersLen++] = BRACKET_END_BUFFER;
+
+  itemBuffers.length = itemBuffersLen;
+
+  const bigBuffer = Buffer.concat(itemBuffers);
+  console.timeEnd('Buff construct');
+
+  console.time('JSON Parse');
+  const output = JSON.parse(bigBuffer);
+  console.timeEnd('JSON Parse');
+
+  console.timeEnd('make item buffer');
+
+  return output;
 };
 
 module.exports.makeItemBuffer = makeItemBuffer;
@@ -321,3 +342,27 @@ const deadLockRetrier = function(session, command, params, _then, _catch) {
 
 module.exports.deadLockRetrier = deadLockRetrier;
 
+Array.prototype.d_map = function(cb) {
+  const len = this.length;
+
+  for (let i = 0; i < len; i++) {
+    this[i] = cb(this[i], i, this);
+  }
+
+  return this;
+};
+Array.prototype.d_filter = function(cb) {
+  const copy = new Array(this.length);
+  let copyLen = 0;
+  const len = this.length;
+
+  for (let i = 0; i < len; i++) {
+    const item = this[i];
+    if (cb(item, i, this)) {
+      copy[copyLen++] = item;
+    }
+  }
+  copy.length = copyLen;
+
+  return copy;
+};
