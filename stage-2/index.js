@@ -76,9 +76,9 @@ const generateClaims = function _generateClaims(neo4j, willGenerateNodes, identi
                 (start:Entity {id: claim.startID})
             USING INDEX start:Entity(id)
             
-            CREATE (end:Claim {id: claim.id})
+            MERGE (end:Claim {id: claim.id})
             SET
-                end = claim.node
+                end += claim.node
 
             WITH end, start, claim
  
