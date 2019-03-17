@@ -319,16 +319,7 @@ const deadLockRetrier = function(session, command, params, _then, _catch, _retry
     .then(
       _ => _then(),
       (err) => {
-        if (err.fields[0].code == 'Neo.ClientError.Transaction.TransactionHookFailed') {
-          console.log(clc.bold.red("Transaction Hook Failed"));
-          return _then();
-        }
-        if (err.fields[0].code == 'Neo.ClientError.Schema.ConstraintValidationFailed') {
-          console.log(clc.bold.red("Constraint Validation Failed"));
-          return _then();
-        }
-        if (err.fields[0].code !== 'Neo.TransientError.Transaction.DeadlockDetected') {
-          console.log(clc.bold.red(`Error: ${err.fields[0].code}`));
+        if (err.code !== 'Neo.TransientError.Transaction.DeadlockDetected') {
           return _catch(err);
         }
         if (_retry > 5) {
